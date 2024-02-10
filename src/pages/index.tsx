@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { Inter } from "next/font/google";
 import styles from "@/styles/Home.module.css";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -69,10 +69,8 @@ const initItems: IInitList[] = [
 ];
 
 export default function Home() {
-  const [initList, setInitList] = useState<typeof initItems>(initItems);
-
-  const [fruit, setFruit] = useState<typeof initItems>([]);
-  const [vegetable, setVegetable] = useState<typeof initItems>([]);
+  const [initList, setInitList] = useState<IInitList[]>(initItems);
+  const [plants, setPlants] = useState<IInitList[]>([]);
 
   const ColumnList = ({
     title,
@@ -82,13 +80,20 @@ export default function Home() {
     list: typeof initList;
   }) => {
     return (
-      <Card>
+      <Card
+        sx={{ height: "100%", boxShadow: "none", border: "1px solid #eceff1" }}
+      >
         <CardHeader
           title={title}
           sx={{ backgroundColor: "#eceff1", textAlign: "center" }}
         />
         <CardContent
-          sx={{ gap: "16px", display: "flex", flexDirection: "column" }}
+          sx={{
+            gap: "16px",
+            display: "flex",
+            flexDirection: "column",
+            height: "100%"
+          }}
         >
           {list.map((item, index: number) => {
             return (
@@ -97,7 +102,7 @@ export default function Home() {
                 border={"1px solid #eceff1"}
                 key={index}
                 sx={{ cursor: "pointer" }}
-                onClick={() => onClickButton(item, title)}
+                onClick={() => onClickButton(item)}
               >
                 <Typography variant={"h5"} textAlign={"center"}>
                   {item.name}
@@ -110,43 +115,41 @@ export default function Home() {
     );
   };
 
-  const onClickButton = (item: IInitList, title: TPlantType) => {
-    setInitList([...initList, item]);
+  const onClickButton = (item: IInitList) => {
+    const find = plants.find((v) => v.name === item.name);
 
-    if (title === "Fruit") {
-      const movedList = fruit.filter((list) => list.name !== item.name);
-      setFruit(movedList);
+    if (!find) {
+      const newItems = [...plants, item];
+
+      setPlants(newItems);
+
+      const movedList = initList.filter((list) => list.name !== item.name);
+      setInitList(movedList);
+
+      onMoveBack(newItems, item);
     } else {
-      const movedList = vegetable.filter((list) => list.name !== item.name);
-      setVegetable(movedList);
+      setPlants((prevState) => {
+        return prevState.filter((_) => _.name !== item.name);
+      });
+      setInitList((prevState) => [...prevState, item]);
     }
   };
 
-  const onMoveBack = (item: IInitList) => {
+  const onMoveBack = (list: IInitList[], item: IInitList) => {
     const timer = setTimeout(() => {
-      fruit.forEach((item, index) => {
-        setFruit((prevState) => prevState.filter((_, i) => i !== index));
+      list.forEach((obj) => {
+        setPlants((prevState) => {
+          return prevState.filter((prev) => prev.name !== obj.name);
+        });
       });
 
-      vegetable.forEach((item, index) => {
-        setVegetable((prevState) => prevState.filter((_, i) => i !== index));
+      setInitList((prevState) => {
+        const find = prevState.find((v) => v.name === item.name);
+        return [...prevState, ...(!find ? [item] : [])];
       });
-
-      setInitList((prevState) => [...prevState, item]);
     }, 5000);
 
     return () => clearTimeout(timer);
-  };
-
-  const onMoveToColumn = (item: IInitList) => {
-    if (item.type === "Fruit") {
-      setFruit((prevState) => [...prevState, item]);
-    } else {
-      setVegetable((prevState) => [...prevState, item]);
-    }
-    const movedList = initList.filter((list) => list.name !== item.name);
-
-    setInitList(movedList);
   };
 
   return (
@@ -167,8 +170,7 @@ export default function Home() {
                   xs={12}
                   key={index}
                   sx={{ cursor: "pointer" }}
-                  onClick={() => onMoveToColumn(item)}
-                  onMouseUp={() => onMoveBack(item)}
+                  onClick={() => onClickButton(item)}
                 >
                   <Box
                     padding={"12px"}
@@ -185,17 +187,12 @@ export default function Home() {
           </Grid>
           {(["Fruit", "Vegetable"] as TPlantType[]).map(
             (item, index: number) => {
-              const list = item === "Fruit" ? fruit : vegetable;
               return (
-                <Grid
-                  paddingTop={"0px !important"}
-                  item
-                  xs={2}
-                  sm={4}
-                  md={4}
-                  key={index}
-                >
-                  <ColumnList title={item} list={list} />
+                <Grid item xs={2} sm={4} md={4} key={index}>
+                  <ColumnList
+                    title={item}
+                    list={plants.filter((obj) => obj.type === item)}
+                  />
                 </Grid>
               );
             }
