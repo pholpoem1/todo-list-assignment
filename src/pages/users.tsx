@@ -108,12 +108,13 @@ const fetchData = async () => {
   }
 };
 
-const groupByDepartment = (users: Users[]) => {
+const departmentSummary = (users: Users[]) => {
   const summary: IDepartmentSummary = {};
 
   users.forEach((user) => {
     const key = user.company.department;
 
+    // initail obj data
     if (!summary[key]) {
       summary[key] = {
         male: 0,
@@ -124,12 +125,14 @@ const groupByDepartment = (users: Users[]) => {
       };
     }
 
+    // นับจำนวนของแต่ละ gender ใน department
     if (user.gender === "male") {
       summary[key].male++;
     } else if (user.gender === "female") {
       summary[key].female++;
     }
 
+    // ถ้ายังไม่เก็บอายุให้ initail ไว้ แล้ว re-assign โดยเช็ค max min จากค่าเดิม
     if (!summary[key].ageRange) {
       summary[key].ageRange = `${user.age}-${user.age}`;
     } else {
@@ -140,12 +143,14 @@ const groupByDepartment = (users: Users[]) => {
       )}`;
     }
 
+    // นับจำนวนสีผมที่มี
     if (!summary[key].hair[user.hair.color]) {
       summary[key].hair[user.hair.color] = 1;
     } else {
       summary[key].hair[user.hair.color]++;
     }
 
+    // เอา fname lname มาตั้งเป็น key แล้ว assign postalCode
     const addressKey = `${user.firstName}${user.lastName}`;
     summary[key].addressUser[addressKey] = user.address.postalCode;
   });
@@ -158,9 +163,9 @@ const Users = () => {
   const onGetUsers = async () => {
     const users = await fetchData();
 
-    const groupedByDepartment = groupByDepartment(users);
+    const summary = departmentSummary(users);
 
-    setUserDepartment(JSON.stringify(groupedByDepartment, undefined, 2));
+    setUserDepartment(JSON.stringify(summary, undefined, 2));
   };
 
   useEffect(() => {
