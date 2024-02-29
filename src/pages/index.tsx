@@ -1,7 +1,7 @@
 import Head from "next/head";
 import { Inter } from "next/font/google";
 import styles from "@/styles/Home.module.css";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Box,
   Card,
@@ -16,7 +16,7 @@ const inter = Inter({ subsets: ["latin"] });
 type TPlantType = "Fruit" | "Vegetable";
 
 interface IInitList {
-  seq?: number;
+  time?: number;
   name: string;
   type: TPlantType;
 }
@@ -117,16 +117,21 @@ export default function Home() {
 
   const onClickButton = (item: IInitList) => {
     const find = plants.find((v) => v.name === item.name);
+    const newItem = { ...item, time: new Date().getTime() };
 
     if (!find) {
-      const newItems = [...plants, item];
+      const newItems = [...plants, newItem] as IInitList[];
 
       setPlants(newItems);
 
       const movedList = initList.filter((list) => list.name !== item.name);
       setInitList(movedList);
 
-      onMoveBack(newItems, item);
+      const timer = setTimeout(() => {
+        onMoveBack(newItems, item);
+      }, 5000);
+
+      return () => clearTimeout(timer);
     } else {
       setPlants((prevState) => {
         return prevState.filter((_) => _.name !== item.name);
@@ -136,20 +141,16 @@ export default function Home() {
   };
 
   const onMoveBack = (list: IInitList[], item: IInitList) => {
-    const timer = setTimeout(() => {
-      list.forEach((obj) => {
-        setPlants((prevState) => {
-          return prevState.filter((prev) => prev.name !== obj.name);
-        });
+    list.forEach((obj) => {
+      setPlants((prevState) => {
+        return prevState.filter((prev) => prev.time !== obj.time);
       });
+    });
 
-      setInitList((prevState) => {
-        const find = prevState.find((v) => v.name === item.name);
-        return [...prevState, ...(!find ? [item] : [])];
-      });
-    }, 5000);
-
-    return () => clearTimeout(timer);
+    setInitList((prevState) => {
+      const find = prevState.find((v) => v.name === item.name);
+      return [...prevState, ...(!find ? [item] : [])];
+    });
   };
 
   return (
